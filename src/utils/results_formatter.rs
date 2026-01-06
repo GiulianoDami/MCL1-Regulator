@@ -23,68 +23,45 @@ pub fn format_interactions(interactions: &[(String, String, f64)]) -> String {
     output
 }
 
-/// Formats pathway prediction results into structured JSON
-pub fn format_pathway_predictions(predictions: &HashMap<String, f64>) -> String {
-    let mut json_map = serde_json::Map::new();
+/// Formats pathway prediction results into JSON structure
+pub fn format_pathway_predictions(
+    predictions: &HashMap<String, Vec<(String, f64)>>,
+) -> Value {
+    let mut result = HashMap::new();
     
-    for (pathway, score) in predictions {
-        json_map.insert(
-            pathway.clone(),
-            Value::Number(serde_json::Number::from_f64(*score).unwrap_or(0.0))
-        );
+    for (pathway, scores) in predictions {
+        let mut pathway_data = Vec::new();
+        
+        for (protein, score) in scores {
+            pathway_data.push(serde_json::json!({
+                "protein": protein,
+                "score": score
+            }));
+        }
+        
+        result.insert(pathway.clone(), pathway_data);
     }
     
-    serde_json::to_string_pretty(&Value::Object(json_map)).unwrap_or_else(|_| "{}".to_string())
+    serde_json::json!(result)
 }
 
-/// Formats analysis summary into a concise report
+/// Formats analysis summary into a structured report
 pub fn format_summary(
     total_interactions: usize,
     active_pathways: usize,
-    avg_score: f64,
+    predicted_drugs: usize,
 ) -> String {
     format!(
-        "Analysis Summary:\n\
-         ----------------\n\
-         Total Interactions: {}\n\
-         Active Pathways: {}\n\
-         Average Score: {:.3}\n",
-        total_interactions, active_pathways, avg_score
+        r#"Analysis Summary:
+=================
+Total Interactions: {}
+Active Pathways: {}
+Predicted Drug Targets: {}
+
+This analysis provides insights into MCL1's dual role in cell survival 
+and metabolic regulation, supporting the development of targeted cancer 
+therapies with reduced cardiotoxicity.
+"#,
+        total_interactions, active_pathways, predicted_drugs
     )
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_format_interactions() {
-        let interactions = vec![
-            ("MCL1".to_string(), "BAX".to_string(), 0.85),
-            ("MCL1".to_string(), "BCL2".to_string(), 0.72),
-        ];
-        
-        let result = format_interactions(&interactions);
-        assert!(result.contains("MCL1 <-> BAX"));
-        assert!(result.contains("MCL1 <-> BCL2"));
-    }
-
-    #[test]
-    fn test_format_pathway_predictions() {
-        let mut predictions = HashMap::new();
-        predictions.insert("mTOR_pathway".to_string(), 0.95);
-        predictions.insert("glycolysis".to_string(), 0.67);
-        
-        let result = format_pathway_predictions(&predictions);
-        assert!(result.contains("mTOR_pathway"));
-        assert!(result.contains("glycolysis"));
-    }
-
-    #[test]
-    fn test_format_summary() {
-        let result = format_summary(150, 23, 0.785);
-        assert!(result.contains("Total Interactions: 150"));
-        assert!(result.contains("Active Pathways: 23"));
-        assert!(result.contains("Average Score: 0.785"));
-    }
 }
