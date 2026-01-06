@@ -7,53 +7,33 @@ pub struct MetabolicPathway {
     pub id: String,
     pub name: String,
     pub description: String,
+    pub genes_involved: Vec<String>,
     pub activation_state: PathwayActivation,
-    pub associated_proteins: Vec<String>,
-    pub regulatory_nodes: HashMap<String, RegulatoryNode>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct RegulatoryNode {
-    pub id: String,
-    pub name: String,
-    pub node_type: NodeType,
-    pub regulation_strength: f64,
-    pub status: NodeStatus,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum NodeType {
-    Enzyme,
-    TranscriptionFactor,
-    Transporter,
-    Other,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum NodeStatus {
-    Active,
-    Inactive,
-    Modulated,
-    Unknown,
+    pub mcl1_interaction_score: f64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum PathwayActivation {
-    Activated,
-    Inhibited,
-    Neutral,
-    Variable,
+    Active,
+    Inactive,
+    Conditional,
 }
 
 impl MetabolicPathway {
-    pub fn new(id: String, name: String, description: String) -> Self {
+    pub fn new(
+        id: String,
+        name: String,
+        description: String,
+        genes_involved: Vec<String>,
+        mcl1_interaction_score: f64,
+    ) -> Self {
         Self {
             id,
             name,
             description,
-            activation_state: PathwayActivation::Neutral,
-            associated_proteins: Vec::new(),
-            regulatory_nodes: HashMap::new(),
+            genes_involved,
+            activation_state: PathwayActivation::Conditional,
+            mcl1_interaction_score,
         }
     }
 
@@ -61,24 +41,48 @@ impl MetabolicPathway {
         self.activation_state = state;
     }
 
-    pub fn add_regulatory_node(&mut self, node: RegulatoryNode) {
-        self.regulatory_nodes.insert(node.id.clone(), node);
+    pub fn is_active(&self) -> bool {
+        matches!(self.activation_state, PathwayActivation::Active)
     }
 
-    pub fn add_associated_protein(&mut self, protein: String) {
-        self.associated_proteins.push(protein);
+    pub fn is_inactive(&self) -> bool {
+        matches!(self.activation_state, PathwayActivation::Inactive)
     }
+}
 
-    pub fn get_node(&self, node_id: &str) -> Option<&RegulatoryNode> {
-        self.regulatory_nodes.get(node_id)
-    }
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PathwayCollection {
+    pub pathways: HashMap<String, MetabolicPathway>,
+}
 
-    pub fn update_node_status(&mut self, node_id: &str, status: NodeStatus) -> bool {
-        if let Some(node) = self.regulatory_nodes.get_mut(node_id) {
-            node.status = status;
-            true
-        } else {
-            false
+impl PathwayCollection {
+    pub fn new() -> Self {
+        Self {
+            pathways: HashMap::new(),
         }
+    }
+
+    pub fn add_pathway(&mut self, pathway: MetabolicPathway) {
+        self.pathways.insert(pathway.id.clone(), pathway);
+    }
+
+    pub fn get_pathway(&self, id: &str) -> Option<&MetabolicPathway> {
+        self.pathways.get(id)
+    }
+
+    pub fn get_mut_pathway(&mut self, id: &str) -> Option<&mut MetabolicPathway> {
+        self.pathways.get_mut(id)
+    }
+
+    pub fn all_pathways(&self) -> impl Iterator<Item = &MetabolicPathway> {
+        self.pathways.values()
+    }
+
+    pub fn active_pathways(&self) -> impl Iterator<Item = &MetabolicPathway> {
+        self.pathways.values().filter(|p| p.is_active())
+    }
+
+    pub fn inactive_pathways(&self) -> impl Iterator<Item = &MetabolicPathway> {
+        self.pathways.values().filter(|p| p.is_inactive())
     }
 }
