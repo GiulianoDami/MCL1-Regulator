@@ -17,7 +17,7 @@ pub struct PathwayPredictionResult {
 }
 
 pub struct PathwayPredictor {
-    pub model_parameters: HashMap<String, f64>,
+    model_parameters: HashMap<String, f64>,
 }
 
 impl PathwayPredictor {
@@ -40,17 +40,19 @@ impl PathwayPredictor {
         let mut pathways = Vec::new();
         let mut total_confidence = 0.0;
         
-        // Simulate pathway prediction based on input data
-        for (i, protein) in mcl1_interactions.iter().enumerate() {
-            let score = self.calculate_activation_score(protein, metabolic_data);
-            total_confidence += score;
-            
-            pathways.push(MetabolicPathway {
-                id: format!("pathway_{}", i),
-                name: format!("Metabolic Pathway {}", i + 1),
-                activation_score: score,
-                associated_proteins: vec![protein.clone()],
-            });
+        // Simulate pathway prediction logic
+        for (pathway_id, &score) in metabolic_data {
+            if score > self.model_parameters["mcl1_threshold"] {
+                let pathway = MetabolicPathway {
+                    id: pathway_id.clone(),
+                    name: format!("Pathway_{}", pathway_id),
+                    activation_score: score,
+                    associated_proteins: vec!["MCL1".to_string(), "mTOR".to_string()],
+                };
+                
+                pathways.push(pathway);
+                total_confidence += score;
+            }
         }
         
         let avg_confidence = if !pathways.is_empty() {
@@ -64,23 +66,5 @@ impl PathwayPredictor {
             confidence_score: avg_confidence,
             prediction_timestamp: chrono::Utc::now().to_rfc3339(),
         }
-    }
-    
-    fn calculate_activation_score(&self, protein: &str, metabolic_data: &HashMap<String, f64>) -> f64 {
-        let base_score = match protein.as_str() {
-            "mcl1" => 0.9,
-            "mtor" => 0.85,
-            "akt" => 0.75,
-            _ => 0.5,
-        };
-        
-        let metabolic_contribution = metabolic_data.get(protein)
-            .copied()
-            .unwrap_or(0.0)
-            * self.model_parameters.get("metabolism_weight").copied().unwrap_or(0.8);
-            
-        let interaction_contribution = self.model_parameters.get("interaction_weight").copied().unwrap_or(0.6);
-        
-        (base_score + metabolic_contribution + interaction_contribution) / 3.0
     }
 }
