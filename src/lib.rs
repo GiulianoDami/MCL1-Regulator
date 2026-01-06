@@ -16,13 +16,13 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_mcl1_analyzer_creation() {
+    fn test_analyzer_creation() {
         let analyzer = MCL1Analyzer::new();
         assert!(analyzer.is_some());
     }
 
     #[test]
-    fn test_pathway_predictor_creation() {
+    fn test_predictor_creation() {
         let predictor = PathwayPredictor::new();
         assert!(predictor.is_some());
     }
