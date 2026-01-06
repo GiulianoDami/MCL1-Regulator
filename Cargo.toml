@@ -1,0 +1,27 @@
+[package]
+name = "mcl1-regulator"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+csv = "1.1"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tokio = { version = "1.0", features = ["full"] }
+clap = { version = "4.0", features = ["derive"] }
+
+[[bin]]
+name = "mcl1-analyzer"
+path = "src/bin/mcl1_analyzer.rs"
+
+[[bin]]
+name = "pathway-predictor"
+path = "src/bin/pathway_predictor.rs"
+
+[[bin]]
+name = "interactive-analyzer"
+path = "src/bin/interactive_analyzer.rs"
+
+[lib]
+name = "mcl1_regulator"
+path = "src/lib.rs"
