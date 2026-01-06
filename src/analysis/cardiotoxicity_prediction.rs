@@ -1,19 +1,31 @@
-use crate::models::MCL1Interaction;
-use crate::utils::calculate_cardiotoxicity_risk;
+use crate::models::{ProteinInteraction, DrugTarget};
+use crate::utils::math::calculate_cardiotoxicity_score;
 
-pub struct CardiotoxicityPredictor {}
+#[derive(Debug, Clone)]
+pub struct CardiotoxicityPredictor {
+    pub threshold: f64,
+}
 
 impl CardiotoxicityPredictor {
-    pub fn new() -> Self {
-        CardiotoxicityPredictor {}
+    pub fn new(threshold: f64) -> Self {
+        Self { threshold }
     }
 
-    pub fn predict_cardiotoxicity(&self, interactions: &[MCL1Interaction]) -> f64 {
-        let total_risk: f64 = interactions
+    pub fn predict_cardiotoxicity(&self, interactions: &[ProteinInteraction]) -> Vec<DrugTarget> {
+        interactions
             .iter()
-            .map(|interaction| calculate_cardiotoxicity_risk(interaction))
-            .sum();
-
-        total_risk / interactions.len() as f64
+            .filter_map(|interaction| {
+                let score = calculate_cardiotoxicity_score(interaction);
+                if score >= self.threshold {
+                    Some(DrugTarget {
+                        target_id: interaction.target.clone(),
+                        cardiotoxicity_score: score,
+                        confidence: 0.95,
+                    })
+                } else {
+                    None
+                }
+            })
+            .collect()
     }
 }
