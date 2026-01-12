@@ -1,6 +1,5 @@
-rust
-//! MCL1-Regulator: A Rust-based computational tool for analyzing MCL1 protein interactions
-//! and predicting cancer cell survival pathways.
+// ! MCL1-Regulator: A Rust-based computational tool for analyzing MCL1 protein interactions
+// ! and predicting cancer cell survival pathways.
 
 /// Main module for MCL1 analysis functionality
 pub mod mcl1_analyzer;
